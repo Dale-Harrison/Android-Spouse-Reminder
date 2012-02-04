@@ -8,5 +8,6 @@ public class ReminderEntry {
 	public String User;
 	public String Body;
 	public String Date;
+	public int Alarmed;
 	
 }

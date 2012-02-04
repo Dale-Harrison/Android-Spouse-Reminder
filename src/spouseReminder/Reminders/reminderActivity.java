@@ -13,10 +13,12 @@ import android.app.ListActivity;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
@@ -30,44 +32,33 @@ public class reminderActivity extends ListActivity {
     	super.onCreate(savedInstanceState);
         setContentView(R.layout.listplaceholder);
         
-        ArrayList<HashMap<String, String>> mylist = new ArrayList<HashMap<String, String>>();
+        SharedPreferences settings = getSharedPreferences("spouse-reminder-perfs", 0);
+        String UserName = settings.getString("UserName", "empty");
+        String Password = settings.getString("Password", "emptypw");
         
-        JSONObject json = JSONfunctions.getJSONfromURL("http://192.168.2.3:8080/remservice?username=Dale&password=12345");
-                
+        SpouseAlarmManager man = new SpouseAlarmManager();
+        JSONObject json = JSONfunctions.getJSONfromURL("http://192.168.2.3:8080/remservice/reminders?username="+UserName+"&password="+Password);
+        DBHelper db = new DBHelper(getApplicationContext());
         try{
         	
         	JSONArray  reminders = json.getJSONArray("reminders");
         	
 	        for(int i=0;i<reminders.length();i++){						
-				HashMap<String, String> map = new HashMap<String, String>();	
-				JSONObject e = reminders.getJSONObject(i);
 				
-				map.put("id", e.getString("_id"));
-				map.put("title",  e.getString("title"));
-	        	map.put("body", e.getString("body"));
-	        	map.put("date",  e.getString("date"));
-	        	mylist.add(map);			
+				JSONObject e = reminders.getJSONObject(i);
+				ReminderEntry entry = new ReminderEntry();
+				entry.reminderID = e.getString("_id");
+				entry.Title = e.getString("title");
+				entry.Body = e.getString("body");
+				entry.Date = e.getString("date");
+                man.AddNewAlarms(getApplicationContext(), entry);
+				db.addReminder(entry);			
 			}		
         }catch(JSONException e)        {
         	 Log.e("log_tag", "Error parsing data "+e.toString());
         }
-        
-
-        Intent intent = new Intent(reminderActivity.this, AlarmReceiver.class);
-
-        PendingIntent appIntent = PendingIntent.getBroadcast(reminderActivity.this, 0, intent, 0);
-
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(System.currentTimeMillis());
-        calendar.add(Calendar.SECOND, 5);
-
-        AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), appIntent);      
-        
-        ListAdapter adapter = new SimpleAdapter(this, mylist , R.layout.main, 
-                        new String[] { "Title", "title" }, 
-                        new int[] { R.id.item_title, R.id.item_subtitle });
-        
+      
+        ListAdapter adapter = new ArrayAdapter<ReminderEntry>(this, android.R.layout.simple_list_item_1, db.fetchAllRows());
         setListAdapter(adapter);
         
         final ListView lv = getListView();
@@ -80,5 +71,9 @@ public class reminderActivity extends ListActivity {
 
 			}
 		});
+        
+       
+
+        
     }
 }

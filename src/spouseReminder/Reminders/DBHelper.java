@@ -25,8 +25,7 @@ public class DBHelper {
 
     private static final String REMINDERS_CREATE =
         "create table " + TABLE_REMINDERS + " ("
-            + "id integer primary key autoincrement, "
-        	+ "reminderID text,"
+        	+ "reminderID text primary key,"
             + "user text,"
             + "title text, "
             + "body text"
@@ -130,6 +129,7 @@ public class DBHelper {
             initialValues.put("title", entry.Title);
             initialValues.put("body", entry.Body);
             initialValues.put("date", entry.Body);
+         
         
             try {
                         db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0,null);
@@ -172,7 +172,6 @@ public class DBHelper {
                 c.moveToFirst();
                 for (int i = 0; i < numRows; ++i) {
                     ReminderEntry row = new ReminderEntry();
-                    row.id = c.getInt(0);
                     row.reminderID = c.getString(1);
                     row.User = c.getString(2);
                     row.Title = c.getString(3);
@@ -205,7 +204,6 @@ public class DBHelper {
                         "id", "reminder", "lastedit"}, "reminderID=" + reminderID, null, null, null, null, null);
                 if (c.getCount() > 0) {
                     c.moveToFirst();
-                    row.id = c.getInt(0);
                     row.reminderID = c.getString(1);
                     row.User = c.getString(2);
                     row.Title = c.getString(3);
