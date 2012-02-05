@@ -28,7 +28,7 @@ public final class R {
         public static final int tv_un=0x7f050003;
     }
     public static final class layout {
-        public static final int individualentry=0x7f030000;
+        public static final int individual_entry=0x7f030000;
         public static final int list_reminder_entry=0x7f030001;
         public static final int listplaceholder=0x7f030002;
         public static final int login=0x7f030003;

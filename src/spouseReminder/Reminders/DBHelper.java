@@ -1,7 +1,5 @@
 package spouseReminder.Reminders;
 
-import java.util.ArrayList;
-import java.util.List;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -160,26 +158,10 @@ public class DBHelper {
          * @return
          */
         public Cursor fetchAllRows(){
-            ArrayList<ReminderEntry> ret = new ArrayList<ReminderEntry>();
             Cursor c;
 
-                db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0,null);
-                c = db.rawQuery("select rowid _id,* from reminders", null);
-                //c = db.query(TABLE_REMINDERS, new String[] {"reminderID", "user", "title", "body", "date"}, null, null, null, null, null);
-                /*int numRows = c.getCount();
-                c.moveToFirst();
-                for (int i = 0; i < numRows; ++i) {
-                    ReminderEntry row = new ReminderEntry();
-                    row.reminderID = c.getString(0);
-                    row.User = c.getString(1);
-                    row.Title = c.getString(2);
-                    row.Body = c.getString(3);
-                    row.Date = c.getString(4);
-                    
-                    ret.add(row);
-                    c.moveToNext();
-                }*/
-                //c.close();
+            db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0,null);
+            c = db.rawQuery("select rowid _id,* from reminders", null);
 
             return c;
         }

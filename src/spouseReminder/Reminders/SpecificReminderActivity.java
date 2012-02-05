@@ -11,7 +11,7 @@ public class SpecificReminderActivity extends Activity{
 	
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.individualentry);
+		setContentView(R.layout.individual_entry);
 	    
 		DBHelper db = new DBHelper(getApplicationContext());
     	Bundle extras = getIntent().getExtras();
