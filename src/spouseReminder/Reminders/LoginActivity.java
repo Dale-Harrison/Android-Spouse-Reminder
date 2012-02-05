@@ -13,6 +13,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class LoginActivity extends Activity {
 	
@@ -34,8 +35,8 @@ public class LoginActivity extends Activity {
 
             @Override
             public void onClick(View v) {
-                // TODO Auto-generated method stub
-            	 JSONObject json = JSONfunctions.getJSONfromURL("http://192.168.2.3:8080/remservice/hello?username="+un.getText().toString()+"&password="+pw.getText().toString());
+             
+            	JSONObject json = JSONfunctions.getJSONfromURL("http://192.168.2.2:8080/remservice/hello?username="+un.getText().toString()+"&password="+pw.getText().toString());
                 try{
                 	
                 	JSONArray  reminders = json.getJSONArray("helloresponse");
@@ -53,6 +54,10 @@ public class LoginActivity extends Activity {
         				    
         					Intent valid = new Intent(getBaseContext(), reminderActivity.class);
         				    startActivity(valid);
+        				}else{
+        					
+        					Toast toast = Toast.makeText(getBaseContext(), "Invalid Username or Password", Toast.LENGTH_LONG);
+        					toast.show();
         				}
 
         			}		

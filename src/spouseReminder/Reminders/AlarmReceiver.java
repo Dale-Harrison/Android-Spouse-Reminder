@@ -19,7 +19,6 @@ public class AlarmReceiver extends BroadcastReceiver {
     	Bundle extras = intent.getExtras();
     	
     	int icon = R.drawable.rolling_pin_256;
-    	String reminderID = extras.getString("reminderID");
     	long when = System.currentTimeMillis();
 
     	ReminderEntry entry = db.fetchReminder(extras.getString("reminderID"));

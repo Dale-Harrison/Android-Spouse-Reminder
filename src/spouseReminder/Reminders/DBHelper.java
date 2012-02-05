@@ -28,7 +28,7 @@ public class DBHelper {
         	+ "reminderID text primary key,"
             + "user text,"
             + "title text, "
-            + "body text"
+            + "body text,"
             + "date text);";
 
     private static final String REMINDERS_DROP =
@@ -129,16 +129,15 @@ public class DBHelper {
             initialValues.put("title", entry.Title);
             initialValues.put("body", entry.Body);
             initialValues.put("date", entry.Body);
-         
-        
-            try {
-                        db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0,null);
+
+            try{
+            	db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0,null);
                 db.insert(TABLE_REMINDERS, null, initialValues);
-                } catch (SQLException e) {
-                        Log.d(TAG,"SQLite exception: " + e.getLocalizedMessage());
-                } finally {
-                        db.close();
-                }
+            }catch (SQLException e) {
+                Log.d(TAG,"SQLite exception: " + e.getLocalizedMessage());
+            }finally{
+                db.close();
+            }
         }
         
         /**
@@ -160,34 +159,29 @@ public class DBHelper {
          * 
          * @return
          */
-        public List<ReminderEntry> fetchAllRows(){
+        public Cursor fetchAllRows(){
             ArrayList<ReminderEntry> ret = new ArrayList<ReminderEntry>();
-            try {
-                        db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0,null);
-                Cursor c;
-                c = db.query(TABLE_REMINDERS, new String[] {
-                "id", "note"},
-                null, null, null, null, null);
-                int numRows = c.getCount();
+            Cursor c;
+
+                db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0,null);
+                c = db.rawQuery("select rowid _id,* from reminders", null);
+                //c = db.query(TABLE_REMINDERS, new String[] {"reminderID", "user", "title", "body", "date"}, null, null, null, null, null);
+                /*int numRows = c.getCount();
                 c.moveToFirst();
                 for (int i = 0; i < numRows; ++i) {
                     ReminderEntry row = new ReminderEntry();
-                    row.reminderID = c.getString(1);
-                    row.User = c.getString(2);
-                    row.Title = c.getString(3);
-                    row.Body = c.getString(4);
-                    row.Date = c.getString(5);
+                    row.reminderID = c.getString(0);
+                    row.User = c.getString(1);
+                    row.Title = c.getString(2);
+                    row.Body = c.getString(3);
+                    row.Date = c.getString(4);
                     
                     ret.add(row);
                     c.moveToNext();
-                }
-                c.close();
-                } catch (SQLException e) {
-                        Log.d(TAG,"SQLite exception: " + e.getLocalizedMessage());
-                } finally {
-                        db.close();
-                }
-            return ret;
+                }*/
+                //c.close();
+
+            return c;
         }
         
         /**
@@ -198,17 +192,17 @@ public class DBHelper {
         public ReminderEntry fetchReminder(String reminderID) {
             ReminderEntry row = new ReminderEntry();
             try {
-                        db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0,null);
+                db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0,null);
                 Cursor c =
                     db.query(true, TABLE_REMINDERS, new String[] {
-                        "id", "reminder", "lastedit"}, "reminderID=" + reminderID, null, null, null, null, null);
+                    		"reminderID", "user", "title", "body", "date"}, "reminderID='" + reminderID+"'", null, null, null, null, null);
                 if (c.getCount() > 0) {
                     c.moveToFirst();
-                    row.reminderID = c.getString(1);
-                    row.User = c.getString(2);
-                    row.Title = c.getString(3);
-                    row.Body = c.getString(4);
-                    row.Date = c.getString(5);
+                    row.reminderID = c.getString(0);
+                    row.User = c.getString(1);
+                    row.Title = c.getString(2);
+                    row.Body = c.getString(3);
+                    row.Date = c.getString(4);
                 } else {
                     row.id = -1;
                 }
