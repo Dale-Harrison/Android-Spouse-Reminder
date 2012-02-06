@@ -1,12 +1,6 @@
 package spouseReminder.Reminders;
 
-import java.text.ParseException;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -16,7 +10,7 @@ import android.util.Log;
 
 public class ReminderService extends Service{
 
-
+		SharedPreferences settings;
 	    public class LocalBinder extends Binder {
 	    	
 	       
@@ -24,6 +18,9 @@ public class ReminderService extends Service{
 
 	    @Override
 	    public void onCreate() {
+	    	
+	    	settings = getSharedPreferences("spouse-reminder-perfs", 0);
+
 	    	new Thread(new Runnable(){
 	    	    public void run() {
 	    	    
@@ -31,7 +28,7 @@ public class ReminderService extends Service{
 		    	    {
 		    	       try {
 						Thread.sleep(60000);
-						syncReminders();
+						SyncManager.syncReminders(getApplicationContext(), settings);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -63,39 +60,7 @@ public class ReminderService extends Service{
 	    // RemoteService for a more complete example.
 	    private final IBinder mBinder = new LocalBinder();
 
-	    public void syncReminders(){
-	    	SharedPreferences settings = getSharedPreferences("spouse-reminder-perfs", 0);
-			String UserName = settings.getString("UserName", "empty");
-			String Password = settings.getString("Password", "emptypw");
-			 
-			 DBHelper db = new DBHelper(getApplicationContext());
-			 SpouseAlarmManager man = new SpouseAlarmManager();
-			 JSONObject json = JSONfunctions.getJSONfromURL("http://192.168.2.2:8080/remservice/reminders?username="+UserName+"&password="+Password);
-			
-			 ReminderEntry entry;
-			 try{
-			 	
-			 	JSONArray  reminders = json.getJSONArray("reminders");
-			 	
-			    for(int i=0;i<reminders.length();i++){						
-					
-					JSONObject e = reminders.getJSONObject(i);
-					entry = new ReminderEntry();
-					entry.reminderID = e.getString("_id");
-					entry.User = e.getString("user");
-					entry.Title = e.getString("title");
-					entry.Body = e.getString("body");
-					entry.Date = e.getString("date");
-			         
-					db.addReminder(entry);			
-					man.AddNewAlarms(getApplicationContext(), entry);
-				}		
-			 }catch(JSONException e)        {
-			 	 Log.e("log_tag", "Error parsing data "+e.toString());
-			 } catch (ParseException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-	    
-	    }
+
+	
+	   
 }

@@ -1,5 +1,9 @@
 package spouseReminder.Reminders;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -27,7 +31,8 @@ public class DBHelper {
             + "user text,"
             + "title text, "
             + "body text,"
-            + "date text);";
+            + "date text,"
+            + "addedon text);";
 
     private static final String REMINDERS_DROP =
         "drop table " + TABLE_REMINDERS + ";";
@@ -121,21 +126,39 @@ public class DBHelper {
          * @param entry
          */
         public void addReminder(ReminderEntry entry) {
-            ContentValues initialValues = new ContentValues();
-            initialValues.put("reminderID", entry.reminderID);
-            initialValues.put("user", entry.User);
-            initialValues.put("title", entry.Title);
-            initialValues.put("body", entry.Body);
-            initialValues.put("date", entry.Body);
+        	SimpleDateFormat formatter;
+            formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
-            try{
-            	db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0,null);
-                db.insert(TABLE_REMINDERS, null, initialValues);
-            }catch (SQLException e) {
-                Log.d(TAG,"SQLite exception: " + e.getLocalizedMessage());
-            }finally{
-                db.close();
-            }
+            Date DateRemAddedOn = null;
+            Date DateLastUpdate = null;
+			try {
+				DateRemAddedOn = formatter.parse(entry.AddedOn.substring(0, 24));
+				DateLastUpdate = formatter.parse(getLastUpdate().substring(0, 24));
+
+			} catch (ParseException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+            
+        	if(DateRemAddedOn.getTime() < DateLastUpdate.getTime()){
+	            ContentValues initialValues = new ContentValues();
+	            initialValues.put("reminderID", entry.reminderID);
+	            initialValues.put("user", entry.User);
+	            initialValues.put("title", entry.Title);
+	            initialValues.put("body", entry.Body);
+	            initialValues.put("date", entry.Body);
+	            initialValues.put("addedon", entry.AddedOn);
+	        	
+	
+	            try{
+	            	db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0,null);
+	                db.insert(TABLE_REMINDERS, null, initialValues);
+	            }catch (SQLException e) {
+	                Log.d(TAG,"SQLite exception: " + e.getLocalizedMessage());
+	            }finally{
+	                db.close();
+	            }
+        	}
         }
         
         /**
@@ -173,6 +196,7 @@ public class DBHelper {
          */
         public ReminderEntry fetchReminder(String reminderID) {
             ReminderEntry row = new ReminderEntry();
+            
             try {
                 db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0,null);
                 Cursor c =
@@ -185,6 +209,7 @@ public class DBHelper {
                     row.Title = c.getString(2);
                     row.Body = c.getString(3);
                     row.Date = c.getString(4);
+                    row.AddedOn = c.getString(5);
                 } else {
                     row.id = -1;
                 }
@@ -215,5 +240,26 @@ public class DBHelper {
                 } finally {
                         db.close();
                 }
+        }
+        
+        public String getLastUpdate(){
+        	
+        	String lastEntry = "";
+        	try {
+                 db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0,null);
+                 Cursor c = db.rawQuery("select lastupdate from t order by rowid desc limit 1", null);
+
+                 if (c.getCount() > 0) {
+                     c.moveToFirst();
+                     lastEntry = c.getString(0);
+                 }
+
+                 c.close();
+                 } catch (SQLException e) {
+                         Log.d(TAG,"SQLite exception: " + e.getLocalizedMessage());
+                 } finally {
+                         db.close();
+                 }
+        	return lastEntry;
         }
 }
