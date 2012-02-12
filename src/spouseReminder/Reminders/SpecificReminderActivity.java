@@ -6,7 +6,6 @@ import android.widget.TextView;
 
 public class SpecificReminderActivity extends Activity{
 
-	TextView title;
 	TextView body;
 	
 	public void onCreate(Bundle savedInstanceState) {
@@ -18,8 +17,6 @@ public class SpecificReminderActivity extends Activity{
 
     	ReminderEntry entry = db.fetchReminder(extras.getString("reminderID"));
     	
-    	title = (TextView)findViewById(R.id.title);
-    	title.setText(entry.Title);
     	body = (TextView)findViewById(R.id.body);
     	body.setText(entry.Body);
 	}

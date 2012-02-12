@@ -1,6 +1,8 @@
 package spouseReminder.Reminders;
 
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -12,6 +14,8 @@ import android.util.Log;
 
 public class SyncManager {
 
+	private static String TAG = "SyncManager";
+	
     public static void syncReminders(Context context, SharedPreferences settings){
     	
     	 String UserName = settings.getString("UserName", "emptyusername");
@@ -31,13 +35,15 @@ public class SyncManager {
 				entry = new ReminderEntry();
 				entry.reminderID = e.getString("_id");
 				entry.User = e.getString("user");
-				entry.Title = e.getString("title");
 				entry.Body = e.getString("body");
 				entry.Date = e.getString("date");
+				entry.Location = e.getString("location");
 				entry.AddedOn = e.getString("addedon");
 		         
-				db.addReminder(entry);			
-				man.AddNewAlarms(context, entry);
+				if(!entryAlreadyExists(context,entry)){
+					db.addReminder(entry);			
+					man.AddNewAlarms(context, entry);
+				}
 			}		
 		 }catch(JSONException e){
 		 	 Log.e("log_tag", "Error parsing data "+e.toString());
@@ -47,4 +53,36 @@ public class SyncManager {
 		}
     
     }
+    
+    private static boolean entryAlreadyExists(Context context, ReminderEntry entry){
+    	
+    	DBHelper db = new DBHelper(context);
+    	SimpleDateFormat formatter;
+        formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+
+        String LastUpdate = db.getLastUpdate();
+        Date DateLastUpdate = null;
+        Date DateRemAddedOn = null;
+        
+        //Needs refactoring
+        if(LastUpdate == ""){
+        	LastUpdate = "1972-01-01T00:00:00.000Z";
+        }
+
+        try {
+        	DateRemAddedOn = formatter.parse(entry.AddedOn.substring(0, 24));
+        	DateLastUpdate = formatter.parse(LastUpdate.substring(0,24));
+        } catch (ParseException e2) {
+        	Log.d(TAG,"Dateparse exception: " + e2.getLocalizedMessage());
+		}
+        
+    	if(DateRemAddedOn.getTime() > DateLastUpdate.getTime()){
+    		return false;
+    	}else{
+    		return true;
+    	}
+    		
+    }
+    
+    
 }

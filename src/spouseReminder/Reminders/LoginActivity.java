@@ -31,40 +31,49 @@ public class LoginActivity extends Activity {
         ok=(Button)findViewById(R.id.btn_login);
         error=(TextView)findViewById(R.id.tv_error);
 
-        ok.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-             
-            	JSONObject json = JSONfunctions.getJSONfromURL("http://192.168.2.2:8080/remservice/hello?username="+un.getText().toString()+"&password="+pw.getText().toString());
-                try{
-                	
-                	JSONArray  reminders = json.getJSONArray("helloresponse");
-                	
-        	        for(int i=0;i<reminders.length();i++){						
-        				
-        				JSONObject e = reminders.getJSONObject(i);
-        				
-        				if(e.getString("hello") != null){
-        					SharedPreferences settings = getSharedPreferences("spouse-reminder-perfs", 0);
-        				    SharedPreferences.Editor editor = settings.edit();
-        				    editor.putString("UserName", un.getText().toString());
-        				    editor.putString("Password", pw.getText().toString());
-        				    editor.commit();
-        				    
-        					Intent valid = new Intent(getBaseContext(), reminderActivity.class);
-        				    startActivity(valid);
-        				}else{
-        					
-        					Toast toast = Toast.makeText(getBaseContext(), "Invalid Username or Password", Toast.LENGTH_LONG);
-        					toast.show();
-        				}
-
-        			}		
-                }catch(JSONException e)        {
-                	 Log.e("log_tag", "Error parsing data "+e.toString());
-                }
-            }
-        });
+        SharedPreferences settings = getSharedPreferences("spouse-reminder-perfs", 0);
+        String UserName = settings.getString("UserName", "emptyusername");
+        
+    	if(UserName !="emptyusername"){
+    		Intent valid = new Intent(getBaseContext(), reminderActivity.class);
+		    startActivity(valid);
+    	}else{
+	        ok.setOnClickListener(new View.OnClickListener() {
+	
+	            @Override
+	            public void onClick(View v) {
+	            	SharedPreferences settings = getSharedPreferences("spouse-reminder-perfs", 0);
+	            	JSONObject json = JSONfunctions.getJSONfromURL("http://192.168.2.2:8080/remservice/hello?username="+un.getText().toString()+"&password="+pw.getText().toString());
+	                
+	            	try{
+	                	
+	                	JSONArray  reminders = json.getJSONArray("helloresponse");
+	                	
+	        	        for(int i=0;i<reminders.length();i++){						
+	        				
+	        				JSONObject e = reminders.getJSONObject(i);
+	        				
+	        				if(e.getString("hello") != null){
+	        					
+	        				    SharedPreferences.Editor editor = settings.edit();
+	        				    editor.putString("UserName", un.getText().toString());
+	        				    editor.putString("Password", pw.getText().toString());
+	        				    editor.commit();
+	        				    
+	        					Intent valid = new Intent(getBaseContext(), reminderActivity.class);
+	        				    startActivity(valid);
+	        				}else{
+	        					
+	        					Toast toast = Toast.makeText(getBaseContext(), "Invalid Username or Password", Toast.LENGTH_LONG);
+	        					toast.show();
+	        				}
+	
+	        			}		
+	                }catch(JSONException e)        {
+	                	 Log.e("log_tag", "Error parsing data "+e.toString());
+	                }
+	            }
+	        });
+    	}
     }
 }

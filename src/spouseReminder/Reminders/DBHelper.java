@@ -1,9 +1,5 @@
 package spouseReminder.Reminders;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -29,9 +25,9 @@ public class DBHelper {
         "create table " + TABLE_REMINDERS + " ("
         	+ "reminderID text primary key,"
             + "user text,"
-            + "title text, "
-            + "body text,"
+            + "body text, "
             + "date text,"
+            + "location text,"
             + "addedon text);";
 
     private static final String REMINDERS_DROP =
@@ -126,39 +122,23 @@ public class DBHelper {
          * @param entry
          */
         public void addReminder(ReminderEntry entry) {
-        	SimpleDateFormat formatter;
-            formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-
-            Date DateRemAddedOn = null;
-            Date DateLastUpdate = null;
-			try {
-				DateRemAddedOn = formatter.parse(entry.AddedOn.substring(0, 24));
-				DateLastUpdate = formatter.parse(getLastUpdate().substring(0, 24));
-
-			} catch (ParseException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-            
-        	if(DateRemAddedOn.getTime() < DateLastUpdate.getTime()){
-	            ContentValues initialValues = new ContentValues();
-	            initialValues.put("reminderID", entry.reminderID);
-	            initialValues.put("user", entry.User);
-	            initialValues.put("title", entry.Title);
-	            initialValues.put("body", entry.Body);
-	            initialValues.put("date", entry.Body);
-	            initialValues.put("addedon", entry.AddedOn);
-	        	
-	
-	            try{
-	            	db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0,null);
-	                db.insert(TABLE_REMINDERS, null, initialValues);
-	            }catch (SQLException e) {
-	                Log.d(TAG,"SQLite exception: " + e.getLocalizedMessage());
-	            }finally{
-	                db.close();
-	            }
-        	}
+        	
+            ContentValues initialValues = new ContentValues();
+            initialValues.put("reminderID", entry.reminderID);
+            initialValues.put("user", entry.User);
+            initialValues.put("body", entry.Body);
+            initialValues.put("date", entry.Date);
+            initialValues.put("location", entry.Location);
+            initialValues.put("addedon", entry.AddedOn);
+        	
+            try{
+            	db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0,null);
+                db.insert(TABLE_REMINDERS, null, initialValues);
+            }catch (SQLException e) {
+                Log.d(TAG,"SQLite exception: " + e.getLocalizedMessage());
+            }finally{
+                db.close();
+            }
         }
         
         /**
@@ -185,7 +165,7 @@ public class DBHelper {
 
             db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0,null);
             c = db.rawQuery("select rowid _id,* from reminders", null);
-
+            
             return c;
         }
         
@@ -201,14 +181,14 @@ public class DBHelper {
                 db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0,null);
                 Cursor c =
                     db.query(true, TABLE_REMINDERS, new String[] {
-                    		"reminderID", "user", "title", "body", "date"}, "reminderID='" + reminderID+"'", null, null, null, null, null);
+                    		"reminderID", "user", "body", "date", "location", "addedon"}, "reminderID='" + reminderID+"'", null, null, null, null, null);
                 if (c.getCount() > 0) {
                     c.moveToFirst();
                     row.reminderID = c.getString(0);
                     row.User = c.getString(1);
-                    row.Title = c.getString(2);
-                    row.Body = c.getString(3);
-                    row.Date = c.getString(4);
+                    row.Body = c.getString(2);
+                    row.Date = c.getString(3);
+                    row.Location = c.getString(4);
                     row.AddedOn = c.getString(5);
                 } else {
                     row.id = -1;
@@ -226,7 +206,7 @@ public class DBHelper {
          * 
          * @param Id
          * @param entry
-         */
+         
         public void updateReminder(long Id, ReminderEntry entry) {
             ContentValues args = new ContentValues();
             args.put("title", entry.Title);
@@ -241,13 +221,13 @@ public class DBHelper {
                         db.close();
                 }
         }
-        
+        */
         public String getLastUpdate(){
         	
         	String lastEntry = "";
         	try {
                  db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0,null);
-                 Cursor c = db.rawQuery("select lastupdate from t order by rowid desc limit 1", null);
+                 Cursor c = db.rawQuery("select addedon from reminders order by rowid desc limit 1", null);
 
                  if (c.getCount() > 0) {
                      c.moveToFirst();

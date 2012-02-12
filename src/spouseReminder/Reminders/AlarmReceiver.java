@@ -22,9 +22,9 @@ public class AlarmReceiver extends BroadcastReceiver {
 
     	ReminderEntry entry = db.fetchReminder(extras.getString("reminderID"));
     	
-    	Notification notification = new Notification(icon, entry.Title, when);
-    	
-    	CharSequence contentTitle = entry.Title;
+    	Notification notification = new Notification(icon, entry.Body, when);
+    	notification.flags = Notification.FLAG_AUTO_CANCEL;
+    	CharSequence contentTitle = "Reminder";
     	CharSequence contentText = entry.Body;
     	
     	Intent notificationIntent = new Intent(context, SpecificReminderActivity.class);

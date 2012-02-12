@@ -3,10 +3,14 @@ package spouseReminder.Reminders;
 
 
 import android.app.ListActivity;
+import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -17,15 +21,24 @@ import android.widget.ListView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.SimpleCursorAdapter;
 
-public class reminderActivity extends ListActivity {
+public class reminderActivity extends ListActivity implements Runnable {
 	 /** Called when the activity is first created. */
 	
+	private ProgressDialog pd;
 	Cursor cursor;
     @Override
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
         setContentView(R.layout.listplaceholder);
-        refreshList();
+        
+        if(!ReminderService.isInstanceCreated()){
+        	startService(new Intent(this, ReminderService.class));
+        }
+        pd = ProgressDialog.show(this, "Working..", "Refreshing list", true,
+                false);
+	    Thread thread = new Thread(this);
+	    thread.start();
+        
        
     }
     
@@ -40,29 +53,37 @@ public class reminderActivity extends ListActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle item selection
         switch (item.getItemId()) {
-        case R.menu.reminder_menu:
-                refreshList();
+        case R.id.refresh:
+        		pd = ProgressDialog.show(this, "Working..", "Refreshing list", true,
+                    false);
+			    Thread thread = new Thread(this);
+			    thread.start();
+        		//refreshList();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
     
-    public void refreshList(){
-    	 DBHelper db = new DBHelper(getApplicationContext());
-    	 SyncManager.syncReminders(getApplicationContext(), getSharedPreferences("spouse-reminder-perfs", 0));
-         try{
-         	  cursor = db.fetchAllRows();
-         	  String[] columns = new String[] { "reminderID", "title", "body" };
-         	  int[] to = new int[] { R.id.reminderID, R.id.title, R.id.body };
-
-         	  SimpleCursorAdapter mAdapter = new SimpleCursorAdapter(this, R.layout.list_reminder_entry, cursor, columns, to);
-               setListAdapter(mAdapter);
- 		} catch (SQLException e) {
+    public void refreshDB(){
+    	SharedPreferences settings = getSharedPreferences("spouse-reminder-perfs", 0);
+    	SyncManager.syncReminders(getApplicationContext(), settings);
+    	DBHelper db = new DBHelper(getApplicationContext());
+     	try{
+     		cursor = db.fetchAllRows();
+     	} catch (SQLException e) {
  		    Log.d("reminderActivity","SQLite exception: " + e.getLocalizedMessage());
  		} finally {
- 		        db.close();
+ 		    //db.close();       
  		}
+    }
+    
+    public void refreshList(){
+
+         String[] columns = new String[] { "reminderID", "body" };
+    	 int[] to = new int[] { R.id.reminderID, R.id.body };
+    	 SimpleCursorAdapter mAdapter = new SimpleCursorAdapter(this, R.layout.list_reminder_entry, cursor, columns, to);
+         setListAdapter(mAdapter);
          
          final ListView lv = getListView();
          lv.setTextFilterEnabled(true);	
@@ -76,4 +97,17 @@ public class reminderActivity extends ListActivity {
  			}
  		});
     }
+
+    public void run() {
+        refreshDB();
+        handler.sendEmptyMessage(0);
+    }
+
+    private Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+        	refreshList();
+        	pd.dismiss(); 
+        }
+    };
 }

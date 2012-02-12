@@ -5,13 +5,6 @@
     android:padding="7dp"
     >
 	<TextView  
-		android:id="@+id/title"
-	    android:layout_width="fill_parent" 
-	    android:layout_height="wrap_content" 
-	    android:textAppearance="?android:attr/textAppearanceMedium"
-	    android:padding="2dp"
-	    android:textSize="20dp" />
-	<TextView  
 		android:id="@+id/body"
 	    android:layout_width="fill_parent" 
 	    android:layout_height="wrap_content" 

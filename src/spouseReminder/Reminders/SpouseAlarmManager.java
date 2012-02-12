@@ -1,13 +1,13 @@
 package spouseReminder.Reminders;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 import android.app.AlarmManager;
 
 public class SpouseAlarmManager {
@@ -18,15 +18,14 @@ public class SpouseAlarmManager {
 		reminderAlarmIntent.putExtra("reminderID", rem.reminderID);
         PendingIntent appIntent = PendingIntent.getBroadcast(ctx, 0, reminderAlarmIntent, 0);
         
-        SimpleDateFormat formatter;
-        formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-
-        Date remDate = formatter.parse(rem.Date.substring(0, 24));
-
+        long remDate = Date.parse(rem.Date);
+        
+        Log.d("SpouseAlarmManager","System Time ms = "+new Date().getTime()+ " Reminder Date "+ remDate);
         Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(remDate.getTime());
-
-        AlarmManager am = (AlarmManager)ctx.getSystemService(Context.ALARM_SERVICE);
+        calendar.setTimeInMillis(remDate);
+        //calendar.setTimeInMillis(new Date().getTime());
+        
+        AlarmManager am = (AlarmManager)ctx.getSystemService(Context.ALARM_SERVICE); 
         am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), appIntent);      
 	}
 	
