@@ -78,7 +78,7 @@ public class reminderActivity extends ListActivity implements Runnable {
     public void refreshList() {
 
          String[] columns = new String[] {"reminderID", "body", "date", "location"};
-    	 int[] to = new int[] {R.id.reminderID, R.id.body};
+    	 int[] to = new int[] {R.id.reminderID, R.id.body, R.id.date, R.id.location};
     	 SimpleCursorAdapter mAdapter = new SimpleCursorAdapter(this, R.layout.list_reminder_entry, cursor, columns, to);
          setListAdapter(mAdapter);
 

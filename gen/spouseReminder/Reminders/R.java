@@ -22,7 +22,7 @@ public final class R {
         public static final int et_pw=0x7f060007;
         public static final int et_un=0x7f060005;
         public static final int item_subtitle=0x7f06000a;
-        public static final int layout=0x7f060003;
+        public static final int location=0x7f060003;
         public static final int refresh=0x7f06000b;
         public static final int reminderID=0x7f060001;
         public static final int tv_error=0x7f060009;
