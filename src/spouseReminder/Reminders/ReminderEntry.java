@@ -1,13 +1,14 @@
 package spouseReminder.Reminders;
 
+import java.util.Date;
+
 public class ReminderEntry {
 
 	public int id;
 	public String reminderID;
-	public String User;
-	public String Body;
-	public String Date;
-	public String Location;
-	public String AddedOn;
-	
+	public String user;
+	public String body;
+	public Date date;
+	public String location;
+	public Date addedOn;
 }

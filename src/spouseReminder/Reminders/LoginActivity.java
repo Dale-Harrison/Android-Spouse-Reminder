@@ -16,64 +16,65 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 public class LoginActivity extends Activity {
-	
-	EditText un,pw;
-   	TextView error;
+
+	EditText un, pw;
+	TextView error;
     Button ok;
 
     /** Called when the activity is first created. */
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    public void onCreate(final Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
         setContentView(R.layout.login);
-        un=(EditText)findViewById(R.id.et_un);
-        pw=(EditText)findViewById(R.id.et_pw);
-        ok=(Button)findViewById(R.id.btn_login);
-        error=(TextView)findViewById(R.id.tv_error);
+        un = (EditText) findViewById(R.id.et_un);
+        pw = (EditText) findViewById(R.id.et_pw);
+        ok = (Button) findViewById(R.id.btn_login);
+        error = (TextView) findViewById(R.id.tv_error);
 
         SharedPreferences settings = getSharedPreferences("spouse-reminder-perfs", 0);
-        String UserName = settings.getString("UserName", "emptyusername");
-        
-    	if(UserName !="emptyusername"){
+        String userName = settings.getString("UserName", "emptyusername");
+
+        if (userName != "emptyusername") {
     		Intent valid = new Intent(getBaseContext(), reminderActivity.class);
 		    startActivity(valid);
-    	}else{
+    	} else {
 	        ok.setOnClickListener(new View.OnClickListener() {
-	
+
 	            @Override
-	            public void onClick(View v) {
+	            public void onClick(final View v) {
 	            	SharedPreferences settings = getSharedPreferences("spouse-reminder-perfs", 0);
-	            	JSONObject json = JSONfunctions.getJSONfromURL("http://192.168.2.2:8080/remservice/hello?username="+un.getText().toString()+"&password="+pw.getText().toString());
-	                
-	            	try{
-	                	
+	            	JSONObject json = JSONfunctions.getJSONfromURL("http://192.168.2.2:8080/remservice/hello?username=" + un.getText().toString() + "&password=" + pw.getText().toString());
+
+	            	try {
+
 	                	JSONArray  reminders = json.getJSONArray("helloresponse");
-	                	
-	        	        for(int i=0;i<reminders.length();i++){						
-	        				
+
+	        	        for (int i = 0; i < reminders.length(); i++) {
+
 	        				JSONObject e = reminders.getJSONObject(i);
-	        				
-	        				if(e.getString("hello") != null){
-	        					
-	        				    SharedPreferences.Editor editor = settings.edit();
-	        				    editor.putString("UserName", un.getText().toString());
-	        				    editor.putString("Password", pw.getText().toString());
+
+	        				if (e.getString("hello") != null) {
+
+	        					SharedPreferences.Editor editor = settings.edit();
+	        					editor.putString("UserName", un.getText().toString());
+	        					editor.putString("Password", pw.getText().toString());
 	        				    editor.commit();
-	        				    
-	        					Intent valid = new Intent(getBaseContext(), reminderActivity.class);
+
+	        				    Intent valid = new Intent(getBaseContext(), reminderActivity.class);
 	        				    startActivity(valid);
-	        				}else{
-	        					
+	        				} else {
+
 	        					Toast toast = Toast.makeText(getBaseContext(), "Invalid Username or Password", Toast.LENGTH_LONG);
 	        					toast.show();
 	        				}
-	
-	        			}		
-	                }catch(JSONException e)        {
-	                	 Log.e("log_tag", "Error parsing data "+e.toString());
+
+	        			}
+	                } catch (JSONException e) {
+	                	 Log.e("log_tag", "Error parsing data " + e.toString());
 	                }
 	            }
 	        });
     	}
     }
 }
+
