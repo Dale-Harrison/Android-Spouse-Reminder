@@ -20,6 +20,7 @@ public class DBHelper {
     private static final String TABLE_DBVERSION = "dbversion";
     private static final String TABLE_REMINDERS = "reminders";
     private static final String TABLE_SYNC = "sync";
+    private static final String TABLE_ALARMED = "alarmed";
     private static final int DATABASE_VERSION = 1;
     private static String TAG = "DBHelper";
     Context myCtx;
@@ -30,7 +31,6 @@ public class DBHelper {
     private static final int FIELD_DATE = 4;
     private static final int FIELD_LOCATION = 5;
     private static final int FIELD_ADDEDON = 6;
-    private static final int FIELD_CURRENTALARM = 7;
     
     private static final String DBVERSION_CREATE =
         "create table " + TABLE_DBVERSION + " ("
@@ -43,14 +43,18 @@ public class DBHelper {
             + "body text, "
             + "date text,"
             + "location text,"
-            + "addedon text,"
-            + "currentalarm integer);";
+            + "addedon text);";
     
     private static final String SYNC_CREATE = 
     	"create table " + TABLE_SYNC + " ("
     		+ "syncid integer primary key,"
     		+ "lastupdate integer);";
 
+    private static final String ALARMED_CREATE =
+    		"create table " + TABLE_ALARMED + " ("
+    		+ "holdid integer primary key,"
+    		+ "reminderID text)";
+    
     private static final String REMINDERS_DROP =
         "drop table " + TABLE_REMINDERS + ";";
     
@@ -105,7 +109,9 @@ public class DBHelper {
 
                 db.execSQL(REMINDERS_CREATE);
                 db.execSQL(SYNC_CREATE);
+                db.execSQL(ALARMED_CREATE);
                 db.execSQL("insert into " + TABLE_SYNC + " values (0, 0)");
+                db.execSQL("insert into " + TABLE_ALARMED + " values (1,'empty')");
         } catch (SQLException e) {
                 Log.d(TAG, "SQLite exception: " + e.getLocalizedMessage());
         }
@@ -134,14 +140,14 @@ public class DBHelper {
     }
 
     public void addReminder(ReminderEntry entry) {
-    	SimpleDateFormat textDateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+    	SimpleDateFormat textDateFormat = new SimpleDateFormat("dd-MMM-yyyy HH:mm");
     	SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
         ContentValues initialValues = new ContentValues();
         initialValues.put("reminderID", entry.reminderID);
         initialValues.put("user", entry.user);
         initialValues.put("body", entry.body);
         initialValues.put("date", textDateFormat.format(entry.date));
-        initialValues.put("location", entry.location);
+        initialValues.put("location", entry.location+"'>"+entry.location);
         initialValues.put("addedon", dateFormat.format(entry.addedOn));
 
         try {
@@ -176,7 +182,7 @@ public class DBHelper {
     }
 
     public final ArrayList<ReminderEntry> fetchAllRowsList() {
-    	SimpleDateFormat textDateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+    	SimpleDateFormat textDateFormat = new SimpleDateFormat("dd-MMM-yyyy HH:mm");
     	SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
     	Cursor remCursor = fetchAllRows();
     	ArrayList<ReminderEntry> rems = new ArrayList<ReminderEntry>();
@@ -208,7 +214,7 @@ public class DBHelper {
 
     public final ReminderEntry fetchReminder(String reminderID) {
         ReminderEntry row = new ReminderEntry();
-        SimpleDateFormat textDateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+        SimpleDateFormat textDateFormat = new SimpleDateFormat("dd-MMM-yyyy HH:mm");
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
         try {
             db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0, null);
@@ -283,21 +289,31 @@ public class DBHelper {
     
     public long getCurrentAlarmedReminderDate() {
 
+    	String reminderIDString = "";
     	String reminderDateString = "";
     	long reminderDate = 0;
-    	SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+    	SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy HH:mm");
     	
 
     	try {
              db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0, null);
-             Cursor c = db.rawQuery("select date from reminders where currentalarm = 1", null);
-             reminderDateString = "01/01/2012 00:00";
+             Cursor c = db.rawQuery("select reminderID from alarmed where holdid = 1", null);
+             
              if (c.getCount() > 0) {
                  c.moveToFirst();
-                 reminderDateString = c.getString(0);
+                 reminderIDString = c.getString(0);
              }
 
              c.close();
+             
+             Cursor d = db.rawQuery("select date from reminders where reminderID = '" + reminderIDString+"'", null);
+            		 
+    		 if (d.getCount() > 0) {
+                 d.moveToFirst();
+                 reminderDateString = d.getString(0);
+             }
+
+            d.close();
          } catch (SQLException e) {
         	 Log.d(TAG, "SQLite exception: " + e.getMessage());
          } finally {
@@ -318,7 +334,7 @@ public class DBHelper {
 
     	try {
              db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0, null);
-             Cursor c = db.rawQuery("select reminderID from reminders where currentalarm = 1", null);
+             Cursor c = db.rawQuery("select reminderID from alarmed", null);
 
              if (c.getCount() > 0) {
                  c.moveToFirst();
@@ -354,12 +370,12 @@ public class DBHelper {
     	ArrayList<ReminderEntry> rems = fetchAllRowsList();
     	long currentTime = System.currentTimeMillis();
 
-    	SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+    	SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy HH:mm");
 
-        long remDate = currentTime;
+        long remDate = 0;
         long currentClosestDate = 0;
 		try {
-			currentClosestDate = dateFormat.parse("01/01/2030 00:00").getTime();
+			currentClosestDate = dateFormat.parse("01-Jan-2030 00:00").getTime();
 		} catch (ParseException e1) {
 			Log.d("DBHelper", "setCurrentAlarmReminder-currentClosestDate: " + e1.getMessage());
 		}
@@ -370,12 +386,10 @@ public class DBHelper {
 			if ((remDate > currentTime) && (remDate < currentClosestDate)) {
 				currentClosestDate = remDate;
 				mostRecentReminderID = entr.reminderID;
-				Log.d("DBHelper","setCurrentAlarmReminder: CurrentClosestDate = " + currentClosestDate);
+				Log.d("DBHelper","setCurrentAlarmReminder: CurrentClosestDate = " + new Date(currentClosestDate).toLocaleString());
 			}
     	}
-    	
-    	ContentValues initialValues = new ContentValues();
-    	initialValues.put("currentalarm", 1);
-    	db.update(TABLE_REMINDERS, initialValues, "reminderID='" + mostRecentReminderID + "'", null);
+
+    	db.execSQL("UPDATE alarmed SET reminderID = '" + mostRecentReminderID + "'");
     }
 }
