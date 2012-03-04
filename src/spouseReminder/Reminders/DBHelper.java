@@ -19,6 +19,7 @@ public class DBHelper {
     private static final String DATABASE_NAME = "reminders";
     private static final String TABLE_DBVERSION = "dbversion";
     private static final String TABLE_REMINDERS = "reminders";
+    private static final String TABLE_SYNC = "sync";
     private static final int DATABASE_VERSION = 1;
     private static String TAG = "DBHelper";
     Context myCtx;
@@ -44,9 +45,17 @@ public class DBHelper {
             + "location text,"
             + "addedon text,"
             + "currentalarm integer);";
+    
+    private static final String SYNC_CREATE = 
+    	"create table " + TABLE_SYNC + " ("
+    		+ "syncid integer primary key,"
+    		+ "lastupdate integer);";
 
     private static final String REMINDERS_DROP =
         "drop table " + TABLE_REMINDERS + ";";
+    
+    private static final String SYNC_DROP = 
+    	"drop table " + TABLE_SYNC + ";";
 
     private SQLiteDatabase db;
 
@@ -95,6 +104,8 @@ public class DBHelper {
                 db.insert(TABLE_DBVERSION, null, args);
 
                 db.execSQL(REMINDERS_CREATE);
+                db.execSQL(SYNC_CREATE);
+                db.execSQL("insert into " + TABLE_SYNC + " values (0, 0)");
         } catch (SQLException e) {
                 Log.d(TAG, "SQLite exception: " + e.getLocalizedMessage());
         }
@@ -105,6 +116,8 @@ public class DBHelper {
             db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0, null);
             db.execSQL(REMINDERS_DROP);
             db.execSQL(REMINDERS_CREATE);
+            db.execSQL(SYNC_DROP);
+            db.execSQL(SYNC_CREATE);
         } catch (SQLException e) {
             Log.d(TAG, "SQLite exception: " + e.getLocalizedMessage());
         } finally {
@@ -139,14 +152,15 @@ public class DBHelper {
         } finally {
             db.close();
         }
+    	
     }
 
     public final void deleteReminder(String Id) {
         try {
             db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0, null);
-            db.delete(TABLE_REMINDERS, "reminderID=" + Id, null);
+            db.delete(TABLE_REMINDERS, "reminderID='" + Id + "'", null);
         } catch (SQLException e) {
-            Log.d(TAG, "SQLite exception: " + e.getLocalizedMessage());
+            Log.d(TAG, "SQLite exception: " + e.getMessage());
         } finally {
             db.close();
         }
@@ -167,39 +181,38 @@ public class DBHelper {
     	Cursor remCursor = fetchAllRows();
     	ArrayList<ReminderEntry> rems = new ArrayList<ReminderEntry>();
     	ReminderEntry row;
-    	remCursor.moveToFirst();
-        do {
-        	 row = new ReminderEntry();
-        	 row.reminderID = remCursor.getString(FIELD_REMINDER_ID);
-             row.user = remCursor.getString(FIELD_USER);
-             row.body = remCursor.getString(FIELD_BODY);
-             try {
-				row.date = textDateFormat.parse(remCursor.getString(FIELD_DATE));
-			} catch (ParseException e) {
-				Log.d(TAG, "row.date Parse exception: " + e.getLocalizedMessage());
-			}
-             row.location = remCursor.getString(FIELD_LOCATION);
-             try {
-				row.addedOn = dateFormat.parse(remCursor.getString(FIELD_ADDEDON));
-			} catch (ParseException e) {
-				Log.d(TAG, "row.addedon Parse exception: " + e.getLocalizedMessage());
-			}
-             
-             rems.add(row);
-        } while (remCursor.moveToNext());
+    	if (remCursor.getCount() > 0) {
+    		remCursor.moveToFirst();
+	        do {
+	        	 row = new ReminderEntry();
+	        	 row.reminderID = remCursor.getString(FIELD_REMINDER_ID);
+	             row.user = remCursor.getString(FIELD_USER);
+	             row.body = remCursor.getString(FIELD_BODY);
+	             try {
+					row.date = textDateFormat.parse(remCursor.getString(FIELD_DATE));
+				} catch (ParseException e) {
+					Log.d(TAG, "row.date Parse exception: " + e.getLocalizedMessage());
+				}
+	             row.location = remCursor.getString(FIELD_LOCATION);
+	             try {
+					row.addedOn = dateFormat.parse(remCursor.getString(FIELD_ADDEDON));
+				} catch (ParseException e) {
+					Log.d(TAG, "row.addedon Parse exception: " + e.getLocalizedMessage());
+				}
+	             
+	             rems.add(row);
+	        } while (remCursor.moveToNext());
+    	}
         return rems;
     }
 
     public final ReminderEntry fetchReminder(String reminderID) {
         ReminderEntry row = new ReminderEntry();
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
-        SimpleDateFormat textDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+        SimpleDateFormat textDateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
         try {
             db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0, null);
-            Cursor c =
-                db.query(true, TABLE_REMINDERS, new String[] {
-                		"reminderID", "user", "body", "date", "location", "addedon"},
-                		"reminderID='" + reminderID + "'", null, null, null, null, null);
+            Cursor 	c = db.rawQuery("select rowid _id,* from reminders where reminderID = '" + reminderID + "'", null);
             if (c.getCount() > 0) {
                 c.moveToFirst();
                 row.reminderID = c.getString(FIELD_REMINDER_ID);
@@ -208,13 +221,13 @@ public class DBHelper {
                 try {
 					row.date = textDateFormat.parse(c.getString(FIELD_DATE));
 				} catch (ParseException e) {
-					Log.d(TAG, "SQLite exception: " + e.getStackTrace());
+					Log.d(TAG, "SQLite exception: " + e.getMessage());
 				}
                 row.location = c.getString(FIELD_LOCATION);
                 try {
 					row.addedOn = dateFormat.parse(c.getString(FIELD_ADDEDON));
 				} catch (ParseException e) {
-					Log.d(TAG, "SQLite exception: " + e.getStackTrace());
+					Log.d(TAG, "SQLite exception: " + e.getMessage());
 				}
             } else {
                 row.id = -1;
@@ -241,7 +254,7 @@ public class DBHelper {
     	}
     	try {
              db = myCtx.openOrCreateDatabase(DATABASE_NAME, 0, null);
-             Cursor c = db.rawQuery("select addedon from reminders order by rowid desc limit 1", null);
+             Cursor c = db.rawQuery("select lastupdate from sync", null);
 
              if (c.getCount() > 0) {
                  c.moveToFirst();
@@ -250,7 +263,7 @@ public class DBHelper {
 
              c.close();
          } catch (SQLException e) {
-                Log.d(TAG, "SQLite exception: " + e.getLocalizedMessage());
+                Log.d(TAG, "SQLite exception: " + e.getMessage());
          } catch (ParseException e) {
 				Log.d(TAG, "Last Entry 2 Date Parse Exception: " + e.getLocalizedMessage());
 		 }finally {
@@ -259,6 +272,15 @@ public class DBHelper {
     	return lastEntry;
     }
 
+    public void setLastUpdate(Date date){
+    	SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+    	
+    	
+    	ContentValues initialValues = new ContentValues();
+    	initialValues.put("lastupdate", dateFormat.format(new Date(System.currentTimeMillis())));
+    	db.update(TABLE_SYNC, initialValues, null, null);
+    }
+    
     public long getCurrentAlarmedReminderDate() {
 
     	String reminderDateString = "";
@@ -277,7 +299,7 @@ public class DBHelper {
 
              c.close();
          } catch (SQLException e) {
-        	 Log.d(TAG, "SQLite exception: " + e.getLocalizedMessage());
+        	 Log.d(TAG, "SQLite exception: " + e.getMessage());
          } finally {
                  db.close();
          }
@@ -305,7 +327,7 @@ public class DBHelper {
 
              c.close();
          } catch (SQLException e) {
-                 Log.d(TAG, "SQLite exception: " + e.getLocalizedMessage());
+                 Log.d(TAG, "SQLite exception: " + e.getMessage());
          } finally {
                  db.close();
          }
@@ -348,10 +370,12 @@ public class DBHelper {
 			if ((remDate > currentTime) && (remDate < currentClosestDate)) {
 				currentClosestDate = remDate;
 				mostRecentReminderID = entr.reminderID;
+				Log.d("DBHelper","setCurrentAlarmReminder: CurrentClosestDate = " + currentClosestDate);
 			}
     	}
-
-    	db.rawQuery("update reminders set currentalarm = 1 where reminderiD ='" + mostRecentReminderID + "'", null);
-
+    	
+    	ContentValues initialValues = new ContentValues();
+    	initialValues.put("currentalarm", 1);
+    	db.update(TABLE_REMINDERS, initialValues, "reminderID='" + mostRecentReminderID + "'", null);
     }
 }

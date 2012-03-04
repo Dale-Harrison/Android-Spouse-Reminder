@@ -10,18 +10,20 @@ import android.app.AlarmManager;
 
 public class SpouseAlarmManager {
 
-	public void AddNewAlarms(Context ctx, ReminderEntry rem) throws ParseException {
+	public void AddNewAlarm(Context ctx) {
 
 		DBHelper db = new DBHelper(ctx);
-		Intent reminderAlarmIntent = new Intent(ctx, AlarmReceiver.class);
+		
+		long remDate = db.getCurrentAlarmedReminderDate();
+		if (remDate != 0 && remDate > System.currentTimeMillis()) {
+			Intent reminderAlarmIntent = new Intent(ctx, AlarmReceiver.class);
 
-        PendingIntent appIntent = PendingIntent.getBroadcast(ctx, (int) System.currentTimeMillis(), reminderAlarmIntent, 0);
+        	PendingIntent appIntent = PendingIntent.getBroadcast(ctx, (int) System.currentTimeMillis(), reminderAlarmIntent, 0);
 
-        long remDate = db.getCurrentAlarmedReminderDate();
-
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(remDate);
-        AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE); 
-        am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), appIntent);      
+	        Calendar calendar = Calendar.getInstance();
+	        calendar.setTimeInMillis(remDate);
+	        AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE); 
+	        am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), appIntent);
+        }
 	}
 }

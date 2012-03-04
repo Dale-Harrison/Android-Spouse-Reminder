@@ -84,7 +84,7 @@ public class reminderActivity extends ListActivity implements Runnable {
 
          final ListView lv = getListView();
          lv.setTextFilterEnabled(true);
-         lv.setOnItemClickListener(new OnItemClickListener() {
+        /* lv.setOnItemClickListener(new OnItemClickListener() {
          	public void onItemClick(AdapterView<?> parent, View view, int position, long id) {        		
 
          		cursor.moveToPosition(position);
@@ -92,7 +92,7 @@ public class reminderActivity extends ListActivity implements Runnable {
          		valid.putExtra("reminderID", cursor.getString(1));
  			    startActivity(valid);
  			}
- 		});
+ 		});*/
     }
 
     public void run() {
@@ -107,4 +107,5 @@ public class reminderActivity extends ListActivity implements Runnable {
         	pd.dismiss();
         }
     };
+    
 }

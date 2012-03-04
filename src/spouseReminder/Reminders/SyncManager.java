@@ -2,6 +2,7 @@ package spouseReminder.Reminders;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -10,6 +11,7 @@ import org.json.JSONObject;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
+
 
 public class SyncManager {
 
@@ -22,7 +24,7 @@ public class SyncManager {
 		 String password = settings.getString("Password", "emptypw");
 		 DBHelper db = new DBHelper(context);
 		 SpouseAlarmManager man = new SpouseAlarmManager();
-		 JSONObject json = JSONfunctions.getJSONfromURL("http://192.168.2.2:8080/remservice/reminders?username=" + userName + "&password=" + password);
+		 JSONObject json = JSONfunctions.getJSONfromURL("http://192.168.2.2:8080/remservice/reminders?username=" + userName + "&password=" + password + "&lastupdate=" + db.getLastUpdate().getTime());
 
 		 ReminderEntry entry;
 		 try {
@@ -38,30 +40,17 @@ public class SyncManager {
 				entry.body = e.getString("body");			
 				entry.date = textDateFormat.parse(e.getString("date"));
 				entry.location = e.getString("location");
-				entry.addedOn = dateFormat.parse(e.getString("addedon"));
-
-				if (!entryAlreadyExists(context, entry)) {
-					db.addReminder(entry);
-					man.AddNewAlarms(context, entry);
-				}
+				entry.addedOn = new Date(new Long(e.getString("addedon")));
+				db.addReminder(entry);
 			}
+		    
+		    db.setCurrentAlarmedReminder();
+			man.AddNewAlarm(context);
+			
 		 } catch (JSONException e) {
 		 	 Log.e("log_tag", "Error parsing JSON data: " + e.toString());
 		 } catch (ParseException e) {
 			 Log.e("log_tag", "Error parsing Date: " + e.toString());
-		}
-		 
-		db.setCurrentAlarmedReminder();
-    }
-
-    private static boolean entryAlreadyExists(Context context, ReminderEntry entry) {
-
-    	DBHelper db = new DBHelper(context);
-
-        if (entry.addedOn.getTime() > db.getLastUpdate().getTime()) {
-    		return false;
-    	} else {
-    		return true;
-    	}
+		}	
     }
 }

@@ -1,11 +1,14 @@
 package spouseReminder.Reminders;
 
+import java.text.ParseException;
+
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 
 public class AlarmReceiver extends BroadcastReceiver {
 
@@ -18,8 +21,9 @@ public class AlarmReceiver extends BroadcastReceiver {
 
     	int icon = R.drawable.rolling_pin_256;
     	long when = System.currentTimeMillis();
-
-    	ReminderEntry entry = db.fetchReminder(db.getCurrentAlarmedReminderID());
+    	String reminderID = db.getCurrentAlarmedReminderID();
+    	ReminderEntry entry = db.fetchReminder(reminderID);
+    	Log.d("AlarmReceiver","Current Alarmed Reminder ID " + entry.reminderID);
     	Notification notification = new Notification(icon, entry.body, when);
     	notification.flags = Notification.FLAG_AUTO_CANCEL;
     	CharSequence contentTitle = "Reminder";
@@ -31,6 +35,12 @@ public class AlarmReceiver extends BroadcastReceiver {
     	notification.setLatestEventInfo(context, contentTitle, contentText, contentIntent);
 
     	mNotificationManager.notify(1, notification);
+  	
+    	db.setCurrentAlarmedReminder();
+    	SpouseAlarmManager man = new SpouseAlarmManager();
+    	
+		man.AddNewAlarm(context);
+    	db.deleteReminder(reminderID);
 
     }
 
